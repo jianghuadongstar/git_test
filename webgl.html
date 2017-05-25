@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang='zh-cmn-Hans'>
+<head>
+    <meta charset='utf-8' />
+    <title>测试</title>
+    <script id="vShader" type="x-shader/x-vertex">
+        attribute vec4 a_Position;
+        attribute float pointW;
+        void main(){
+            gl_Position = a_Position;
+            gl_PointSize = pointW;
+        }
+    </script>
+    <script id="fShader" type="x-shader/x-fragment">
+        precision mediump float;
+        void main(){
+            gl_FragColor = vec4(1.0,0.0,0.0,1.0);
+        }
+    </script>
+</head>
+<body>
+<canvas id='canvas'></canvas>
+<script>
+    window.onload = function () {
+        init();
+    };
+    function init(){
+        var canvas, gl,shaderProgram;
+        canvas = document.getElementById("canvas");
+        canvas.width = 500;
+        canvas.height = 500;
+        gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl){
+            console.log("Fail to get WebGL context");
+            return;
+        }
+
+        gl.clearColor(0.0, 0.0, 0.0, 0.8);
+        gl.clear(gl.COLOR_BUFFER_BIT);
+
+        var vs = gl.createShader(gl.VERTEX_SHADER);
+        var fs = gl.createShader(gl.FRAGMENT_SHADER);
+        gl.shaderSource(vs, document.getElementById("vShader").textContent); //设置着色器的源码
+        gl.shaderSource(fs, document.getElementById("fShader").textContent);
+        gl.compileShader(vs);
+        gl.compileShader(fs);
+        if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+            console.log(gl.getShaderInfoLog(vs));
+        }
+        shaderProgram = gl.createProgram(); //创建着色器程序
+        gl.attachShader(shaderProgram, vs); //把着色器信息附加到着色器程序
+        gl.attachShader(shaderProgram, fs);
+        gl.linkProgram(shaderProgram);
+        gl.useProgram(shaderProgram);
+
+        var a_Position = gl.getAttribLocation(shaderProgram, 'a_Position'); //取得变量
+        var pointW = gl.getAttribLocation(shaderProgram, 'pointW');
+        var line =  new Float32Array([
+            0.0,0.5,
+            0.5,0.0
+        ]);
+        var point =  new Float32Array([
+            0.0,0.5
+        ]);
+
+
+        var x,y;
+        let w = 10.0;
+        var setW = w;
+        x = point[0];
+        y = point[1];
+        (function () {
+            var pointMove =  new Float32Array([
+                x,y
+            ]);
+            x += 0.01;
+            y -= 0.01;
+            setW -=0.4;
+            if ( setW <=0.3 ){
+                setW = w;
+            }
+            if( x >= 0.5||y <= 0.0 ){
+                x = point[0];
+                y = point[1];
+            }
+            gl.clearColor(0.0,0.0,0.0,1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            // 为a_Position  创建缓冲区对象   line来调用
+            //点buff
+            gl.vertexAttrib1f(pointW, setW);
+            createBuff(pointMove,a_Position,2);
+            gl.drawArrays(gl.POINTS, 0, pointMove.length/2);
+            //直线buff
+            createBuff(line,a_Position,2);
+            gl.drawArrays(gl.LINES, 0, line.length/2);
+            setTimeout(arguments.callee, 1000 / 30);
+        })();
+
+
+
+
+
+
+
+        function pointOnLine(){
+            var x0,y0, x,y;
+        }
+
+
+
+        /*
+         * createBuff   创建缓冲区对象的方法
+         * arr      （array）        点坐标 数组
+         * attriute  (string)       着色器中属性
+         *size       (number)       对应attribute变量的分量
+         * */
+        function createBuff(arr,attriute,size ){
+            // 创建缓冲区对象
+            var vertexBuffer = gl.createBuffer();
+            if (!vertexBuffer) {
+                console.log('创建缓冲区对象失败。');
+                return -1;
+            }
+            //　绑定缓冲区对象到目标
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            // 将数据写入缓冲区对象
+            gl.bufferData(gl.ARRAY_BUFFER, arr, gl.STATIC_DRAW);
+            // 将缓冲区对象赋值给 attriute中变量
+            gl.vertexAttribPointer(attriute, size, gl.FLOAT, false, 0, 0);
+            // 开启 attribute 变量
+            gl.enableVertexAttribArray(attriute);
+        }
+
+    }
+
+</script>
+</body>
+</html>
